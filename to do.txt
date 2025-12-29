@@ -1,0 +1,4 @@
+bilder drehbar machen
+höhe und breite tauschbar 
+
+verschieben der wand zusätzlich mit leertaste + linksklick
