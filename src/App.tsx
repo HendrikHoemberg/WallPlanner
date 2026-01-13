@@ -6,6 +6,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
   type Modifier,
 } from '@dnd-kit/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -142,23 +143,42 @@ function App() {
   }, [wall, instances, templates]);
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over, delta } = event;
-    const data = active.data.current as any;
+    const { active, over, delta, activatorEvent } = event;
+    const data = active.data.current;
     
     // Clear guides
     setAlignmentGuides([]);
 
     if (data?.type === 'template' && over?.id === 'wall-canvas') {
-      // For drop, we need to calculate the position on the wall
-      // This is simplified - a full implementation would use the DndContext's position tracking
       const templateId = data.templateId;
       const template = templates.find((t) => t.id === templateId);
 
       if (template) {
-        // Create instance at center of wall
-        let position = {
-          x: Math.max(0, wall.dimensions.width / 2 - template.dimensions.width / 2),
-          y: Math.max(0, wall.dimensions.height / 2 - template.dimensions.height / 2),
+        // Calculate the drop position relative to the wall canvas
+        // Get the current cursor position
+        const activator = activatorEvent as MouseEvent | TouchEvent;
+        const clientX = 'clientX' in activator ? activator.clientX : activator.touches[0].clientX;
+        const clientY = 'clientY' in activator ? activator.clientY : activator.touches[0].clientY;
+        
+        const dropX = clientX + delta.x;
+        const dropY = clientY + delta.y;
+
+        // Get wall canvas position from the 'over' object
+        // over.rect is the bounding box of the wall canvas on screen
+        const wallRect = over.rect;
+        
+        // Coordinates relative to wall top-left (in screen pixels, already zoomed)
+        const relativeX = dropX - wallRect.left;
+        const relativeY = dropY - wallRect.top;
+
+        // Convert to mm (pixelRatio * zoom is pixels per mm on screen)
+        const posX = relativeX / (pixelRatio * zoom);
+        const posY = relativeY / (pixelRatio * zoom);
+
+        // Center the frame on the drop point and constrain to wall bounds
+        const position = {
+          x: Math.max(0, Math.min(posX - template.dimensions.width / 2, wall.dimensions.width - template.dimensions.width)),
+          y: Math.max(0, Math.min(posY - template.dimensions.height / 2, wall.dimensions.height - template.dimensions.height)),
         };
 
         addInstance(templateId, position);
@@ -179,7 +199,7 @@ function App() {
           const deltaXmm = delta.x / (pixelRatio * zoom);
           const deltaYmm = delta.y / (pixelRatio * zoom);
   
-          let newPosition = {
+          const newPosition = {
             x: Math.max(0, Math.min(instance.position.x + deltaXmm, wall.dimensions.width - instance.dimensions.width)),
             y: Math.max(0, Math.min(instance.position.y + deltaYmm, wall.dimensions.height - instance.dimensions.height)),
           };
@@ -192,14 +212,48 @@ function App() {
     setDraggedTemplateId(null);
   };
 
-  const handleDragStart = (event: any) => {
-    const data = event.active.data.current as any;
+  const handleDragStart = (event: DragStartEvent) => {
+    const data = event.active.data.current;
     if (data?.type === 'template') {
       setDraggedTemplateId(data.templateId);
     }
     // Reset snap result
     lastSnapResultRef.current = null;
   };
+
+  // Modifier to center the drag overlay on the cursor for templates
+  const snapCenterToCursor: Modifier = useCallback(
+    ({ transform, activatorEvent, active }) => {
+      if (active?.data.current?.type !== 'template' || !activatorEvent) {
+        return transform;
+      }
+
+      const template = templates.find((t) => t.id === active.data.current?.templateId);
+      if (!template) return transform;
+
+      const activator = activatorEvent as MouseEvent | TouchEvent;
+      const clientX = 'clientX' in activator ? activator.clientX : activator.touches[0].clientX;
+      const clientY = 'clientY' in activator ? activator.clientY : activator.touches[0].clientY;
+
+      const activeRect = active.rect.current;
+      if (!activeRect || !activeRect.initial) return transform;
+
+      // Calculate the scaled dimensions of the frame as it will appear in the overlay
+      const overlayWidth = template.dimensions.width * pixelRatio * zoom;
+      const overlayHeight = template.dimensions.height * pixelRatio * zoom;
+
+      // To center the overlay on the cursor, we need to:
+      // 1. Subtract the initial offset of the cursor from the top-left of the source element
+      // 2. Subtract half the overlay dimensions
+      // 3. Add the current transform (movement delta)
+      return {
+        ...transform,
+        x: (clientX - activeRect.initial.left) - overlayWidth / 2 + transform.x,
+        y: (clientY - activeRect.initial.top) - overlayHeight / 2 + transform.y,
+      };
+    },
+    [templates, pixelRatio, zoom]
+  );
 
   // Modifier for snapping
   const snapToGridModifier: Modifier = useCallback(
@@ -341,17 +395,35 @@ function App() {
         rightSidebar={<PropertiesEditor />}
       />
 
-      <DragOverlay>
+      <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
         {draggedTemplate ? (
           <div
             style={{
-              width: `${draggedTemplate.dimensions.width / 10}px`,
-              height: `${draggedTemplate.dimensions.height / 10}px`,
-              border: `2px solid ${draggedTemplate.borderColor}`,
-              backgroundColor: '#f5f5f5',
+              width: `${draggedTemplate.dimensions.width * pixelRatio * zoom}px`,
+              height: `${draggedTemplate.dimensions.height * pixelRatio * zoom}px`,
+              border: `${Math.max(1, draggedTemplate.borderWidth * pixelRatio * zoom)}px solid ${draggedTemplate.borderColor}`,
+              backgroundColor: '#ffffff',
               opacity: 0.8,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              pointerEvents: 'none',
             }}
-          />
+          >
+            {draggedTemplate.imageUrl ? (
+              <img
+                src={draggedTemplate.imageUrl}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center text-gray-400">
+                <span className="text-[10px] uppercase font-bold tracking-wider">Preview</span>
+              </div>
+            )}
+          </div>
         ) : null}
       </DragOverlay>
     </DndContext>
