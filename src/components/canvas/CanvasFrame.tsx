@@ -56,6 +56,7 @@ export const CanvasFrame: React.FC<CanvasFrameProps> = ({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      data-draggable="true"
       onClick={handleClick}
       style={{
         position: 'absolute',

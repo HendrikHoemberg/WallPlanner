@@ -6,6 +6,8 @@ interface UIStoreState extends UIState {
   viewport: ViewportState;
   pixelRatio: number;
   alignmentGuides: AlignmentGuide[];
+  isLeftSidebarOpen: boolean;
+  isRightSidebarOpen: boolean;
   selectFrame: (id: string | null) => void;
   selectWall: () => void;
   clearSelection: () => void;
@@ -16,6 +18,8 @@ interface UIStoreState extends UIState {
   setShowSmartGuides: (show: boolean) => void;
   setPixelRatio: (ratio: number) => void;
   setAlignmentGuides: (guides: AlignmentGuide[]) => void;
+  setLeftSidebarOpen: (isOpen: boolean) => void;
+  setRightSidebarOpen: (isOpen: boolean) => void;
 }
 
 const defaultViewport: ViewportState = {
@@ -33,6 +37,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   viewport: defaultViewport,
   pixelRatio: 0.5,
   alignmentGuides: [],
+  isLeftSidebarOpen: false,
+  isRightSidebarOpen: false,
 
   selectFrame: (id: string | null) =>
     set({
@@ -80,4 +86,7 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   setAlignmentGuides: (guides: AlignmentGuide[]) => set({ alignmentGuides: guides }),
   setPixelRatio: (ratio: number) => set({ pixelRatio: ratio }),
+  
+  setLeftSidebarOpen: (isOpen) => set({ isLeftSidebarOpen: isOpen }),
+  setRightSidebarOpen: (isOpen) => set({ isRightSidebarOpen: isOpen }),
 }));

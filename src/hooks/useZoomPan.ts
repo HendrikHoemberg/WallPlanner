@@ -83,6 +83,46 @@ export function useZoomPan(options: UseZoomPanOptions = {}): UseZoomPanReturn {
     [viewport.panOffset]
   );
 
+  const handleTouchStart = useCallback(
+    (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      // Don't pan if touching a draggable element (like a frame)
+      if (target.closest('[data-draggable="true"]')) {
+        return;
+      }
+
+      // Single touch pan
+      if (e.touches.length === 1) {
+        setIsPanning(true);
+        panStartRef.current = {
+          x: e.touches[0].clientX - viewport.panOffset.x,
+          y: e.touches[0].clientY - viewport.panOffset.y,
+        };
+      }
+    },
+    [viewport.panOffset]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (!isPanning || !panStartRef.current || e.touches.length !== 1) return;
+      
+      e.preventDefault(); // Prevent scrolling the page while panning the canvas
+
+      const newPanX = e.touches[0].clientX - panStartRef.current.x;
+      const newPanY = e.touches[0].clientY - panStartRef.current.y;
+
+      setPan({ x: newPanX, y: newPanY });
+      options.onPanChange?.({ x: newPanX, y: newPanY });
+    },
+    [isPanning, setPan, options]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    setIsPanning(false);
+    panStartRef.current = null;
+  }, []);
+
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isPanning || !panStartRef.current) return;
@@ -121,20 +161,26 @@ export function useZoomPan(options: UseZoomPanOptions = {}): UseZoomPanReturn {
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     container.addEventListener('mousedown', handleMouseDown);
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchend', handleTouchEnd);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
       container.removeEventListener('mousedown', handleMouseDown);
+      container.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [handleWheel, handleMouseDown, handleMouseMove, handleMouseUp, handleKeyDown, handleKeyUp]);
+  }, [handleWheel, handleMouseDown, handleMouseMove, handleMouseUp, handleKeyDown, handleKeyUp, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   const zoomIn = useCallback(() => {
     const newZoom = Math.min(maxZoom, viewport.zoom + ZOOM_STEP);

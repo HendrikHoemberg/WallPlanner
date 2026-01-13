@@ -47,7 +47,7 @@ export const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
           <img src={imageUrl} alt="Preview" className="w-full h-32 object-cover" />
           <button
             onClick={onImageRemove}
-            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded hover:bg-red-600"
+            className="absolute top-2 right-2 flex items-center justify-center bg-red-500 text-white rounded hover:bg-red-600 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 md:p-1"
           >
             <X size={16} />
           </button>
@@ -66,7 +66,7 @@ export const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
       <button
         onClick={() => fileInputRef.current?.click()}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg hover:border-gray-400 disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg hover:border-gray-400 disabled:opacity-50 min-h-[44px] md:min-h-0"
       >
         <Upload size={18} />
         {loading ? 'Uploading...' : imageUrl ? 'Change Image' : 'Upload Image'}

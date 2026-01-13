@@ -1,5 +1,6 @@
 import { ArrowRightLeft, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useUnitConversion } from '../../hooks/useUnitConversion';
 import type { FrameTemplate } from '../../types';
 import { Button } from '../ui/Button';
@@ -206,13 +207,13 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 transition-all"
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] transition-all"
       onClick={handleClose}
     >
       <div
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -222,7 +223,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 p-2 -mr-2"
           >
             <X size={20} />
           </button>
@@ -303,6 +304,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
                 setHeightInput(tempInput);
               }}
               title="Swap width and height"
+              className="min-h-[44px] md:min-h-0"
             >
               Swap W/H
             </Button>
@@ -341,14 +343,15 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
 
         {/* Footer */}
         <div className="flex gap-2 p-4 border-t bg-gray-50">
-          <Button variant="secondary" onClick={handleClose} className="flex-1">
+          <Button variant="secondary" onClick={handleClose} className="flex-1 min-h-[44px] md:min-h-0">
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSave} className="flex-1">
+          <Button variant="primary" onClick={handleSave} className="flex-1 min-h-[44px] md:min-h-0">
             {editingTemplate ? 'Update' : 'Create'}
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -30,7 +30,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             value={value}
             onChange={onChange}
             className={`
-              w-full px-3 py-2 text-sm border rounded-md
+              w-full px-3 py-2 text-base md:text-sm border rounded-md
               appearance-none cursor-pointer
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
               bg-white

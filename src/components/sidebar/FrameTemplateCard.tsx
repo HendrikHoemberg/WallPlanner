@@ -8,12 +8,14 @@ interface FrameTemplateCardProps {
   template: FrameTemplate;
   onEdit: () => void;
   onDelete: () => void;
+  onClick?: () => void;
 }
 
 export const FrameTemplateCard: React.FC<FrameTemplateCardProps> = ({
   template,
   onEdit,
   onDelete,
+  onClick,
 }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `template-${template.id}`,
@@ -25,13 +27,26 @@ export const FrameTemplateCard: React.FC<FrameTemplateCardProps> = ({
       onDelete();
     }
   };
+  
+  const handleClick = () => {
+    // If it was a drag, dnd-kit usually prevents standard click events if the sensor is configured correctly.
+    // However, for touch sensors, sometimes tap propagates.
+    // We want to allow tap-to-add.
+    if (!isDragging && onClick) {
+      onClick();
+    }
+  };
+
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onClick={handleClick}
       onDoubleClick={onEdit}
+      title={!isMobile ? "Drag and drop to add to wall" : undefined}
       className={`p-3 border rounded-lg bg-white transition-all ${
         isDragging ? 'opacity-50 scale-95' : 'hover:shadow-md'
       } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
@@ -50,7 +65,7 @@ export const FrameTemplateCard: React.FC<FrameTemplateCardProps> = ({
             maxWidth: '100%',
             maxHeight: '100%',
           }}
-          className="bg-white shadow-sm flex-shrink-0 transition-all"
+          className="bg-white shadow-sm shrink-0 transition-all"
         >
           {template.imageUrl && (
             <img src={template.imageUrl} alt={template.name} className="w-full h-full object-cover" />
@@ -72,7 +87,7 @@ export const FrameTemplateCard: React.FC<FrameTemplateCardProps> = ({
           variant="secondary"
           size="sm"
           onClick={onEdit}
-          className="flex-1"
+          className="flex-1 min-h-11 md:min-h-0"
           icon={<Edit2 size={14} />}
         >
           Edit
@@ -81,7 +96,7 @@ export const FrameTemplateCard: React.FC<FrameTemplateCardProps> = ({
           variant="danger"
           size="sm"
           onClick={handleDelete}
-          className="flex-1"
+          className="flex-1 min-h-11 md:min-h-0"
           icon={<Trash2 size={14} />}
         >
           Delete

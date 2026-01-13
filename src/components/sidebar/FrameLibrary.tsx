@@ -1,6 +1,8 @@
 import { Plus } from 'lucide-react';
 import React, { useState } from 'react';
 import { useFrameStore } from '../../stores/frameStore';
+import { useUIStore } from '../../stores/uiStore';
+import { wallStore } from '../../stores/wallStore';
 import type { FrameTemplate } from '../../types';
 import { Button } from '../ui/Button';
 import { AddFrameModal } from './AddFrameModal';
@@ -9,11 +11,32 @@ import { FrameTemplateCard } from './FrameTemplateCard';
 export const FrameLibrary: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<FrameTemplate | undefined>();
+  const setLeftSidebarOpen = useUIStore((state) => state.setLeftSidebarOpen);
 
   const templates = useFrameStore((state) => state.templates);
   const addTemplate = useFrameStore((state) => state.addTemplate);
   const updateTemplate = useFrameStore((state) => state.updateTemplate);
   const deleteTemplate = useFrameStore((state) => state.deleteTemplate);
+  
+  const addInstance = useFrameStore((state) => state.addInstance);
+  const selectFrame = useUIStore((state) => state.selectFrame);
+  const wallConfig = wallStore((state) => state.wall);
+
+  const handleCreateInstance = (template: FrameTemplate) => {
+    // Only allow click-to-add on mobile
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) return;
+
+    // Add to center of wall
+    const x = (wallConfig.dimensions.width - template.dimensions.width) / 2;
+    const y = (wallConfig.dimensions.height - template.dimensions.height) / 2;
+    
+    const newId = addInstance(template.id, { x, y });
+    selectFrame(newId);
+    
+    // Close sidebar on mobile
+    setLeftSidebarOpen(false);
+  };
 
   const handleAddTemplate = (template: Omit<FrameTemplate, 'id' | 'createdAt'>) => {
     if (editingTemplate) {
@@ -49,6 +72,7 @@ export const FrameLibrary: React.FC = () => {
           size="sm"
           onClick={() => setIsAddModalOpen(true)}
           icon={<Plus size={16} />}
+          className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 md:h-auto"
         >
           Add
         </Button>
@@ -69,6 +93,7 @@ export const FrameLibrary: React.FC = () => {
                 template={template}
                 onEdit={() => handleEditTemplate(template)}
                 onDelete={() => handleDeleteTemplate(template.id)}
+                onClick={() => handleCreateInstance(template)}
               />
             ))}
           </div>

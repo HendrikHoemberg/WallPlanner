@@ -98,11 +98,6 @@ export const WallCanvas: React.FC<WallCanvasProps> = ({ wall, children }) => {
             zoom={zoom}
           />
 
-          {/* Scale reference bar */}
-          <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 text-xs rounded">
-            Scale: 1mm = {pixelRatio.toFixed(2)}px
-          </div>
-
           {/* Frame instances */}
           <CanvasContext.Provider value={{ pixelRatio }}>
             {children}

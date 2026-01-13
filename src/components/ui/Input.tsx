@@ -38,7 +38,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             value={value}
             onChange={onChange}
             className={`
-              w-full px-3 py-2 text-sm border rounded-md
+              w-full px-3 py-2 text-base md:text-sm border rounded-md
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
               ${error ? 'border-red-500' : 'border-gray-300'}
               ${unit ? 'pr-10' : ''}
