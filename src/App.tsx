@@ -237,10 +237,18 @@ function App() {
       // Debounce or check equality to avoid excess re-renders
       const guidesChanged = 
         result.guides.length !== alignmentGuides.length ||
-        !result.guides.every((g, i) => 
-          g.type === alignmentGuides[i].type && 
-          Math.abs(g.position - alignmentGuides[i].position) < 0.001
-        );
+        !result.guides.every((g, i) => {
+          const other = alignmentGuides[i];
+          if (g.type !== other.type) return false;
+          // treat undefined and null the same for position checks
+          const pos1 = g.position ?? null;
+          const pos2 = other.position ?? null;
+          
+          if (pos1 === null && pos2 === null) return true;
+          if (pos1 === null || pos2 === null) return false;
+          
+          return Math.abs(pos1 - pos2) < 0.001;
+        });
 
       if (guidesChanged) {
         requestAnimationFrame(() => setAlignmentGuides(result.guides));
@@ -287,7 +295,7 @@ function App() {
         instances: [],
       });
       useUIStore.setState({
-        mode: 'free',
+        // mode: 'free', // removed as it is not part of UIState
         selectedFrameId: null,
         selectedElement: null,
         isDragging: false,
@@ -297,13 +305,6 @@ function App() {
           panOffset: { x: 0, y: 0 },
           minZoom: 0.1,
           maxZoom: 3,
-        },
-        gridConfig: {
-          enabled: true,
-          cellSize: 100,
-          snapToGrid: true,
-          showGrid: true,
-          gridColor: '#9ca3af',
         },
       });
     }
