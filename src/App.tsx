@@ -1,12 +1,12 @@
 import {
-    DndContext,
-    DragOverlay,
-    MouseSensor,
-    TouchSensor,
-    useSensor,
-    useSensors,
-    type DragEndEvent,
-    type Modifier,
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type Modifier,
 } from '@dnd-kit/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CanvasFrame } from './components/canvas/CanvasFrame';
