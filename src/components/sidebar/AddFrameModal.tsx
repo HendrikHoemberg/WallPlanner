@@ -1,5 +1,5 @@
-import { X } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import { ArrowRightLeft, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useUnitConversion } from '../../hooks/useUnitConversion';
 import type { FrameTemplate } from '../../types';
 import { Button } from '../ui/Button';
@@ -20,15 +20,132 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
   onClose,
   onSave,
 }) => {
-  const { toDisplay, toBase } = useUnitConversion();
+  const { toDisplay, toBase, currentUnit } = useUnitConversion();
   const [name, setName] = useState(editingTemplate?.name || '');
   const [width, setWidth] = useState(editingTemplate ? toDisplay(editingTemplate.dimensions.width) : 20);
+  const [widthInput, setWidthInput] = useState(String(width));
+  const [widthPrev, setWidthPrev] = useState(width);
   const [height, setHeight] = useState(editingTemplate ? toDisplay(editingTemplate.dimensions.height) : 20);
+  const [heightInput, setHeightInput] = useState(String(height));
+  const [heightPrev, setHeightPrev] = useState(height);
   const [borderWidth, setBorderWidth] = useState(
     editingTemplate ? toDisplay(editingTemplate.borderWidth) : 1
   );
+  const [borderWidthInput, setBorderWidthInput] = useState(String(borderWidth));
+  const [borderWidthPrev, setBorderWidthPrev] = useState(borderWidth);
   const [borderColor, setBorderColor] = useState(editingTemplate?.borderColor || '#000000');
   const [imageUrl, setImageUrl] = useState(editingTemplate?.imageUrl || '');
+
+  const MIN_DIMENSION_MM = 50; // 5cm minimum
+  const minDisplayValue = useMemo(() => toDisplay(MIN_DIMENSION_MM), [toDisplay]);
+
+  // Debounce timers for text input
+  const widthDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const heightDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const borderWidthDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Debounce function to update preview after user stops typing
+  const debounceUpdate = (
+    inputValue: string,
+    currentValue: number,
+    setter: (value: number) => void,
+    timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | undefined>,
+    minVal: number = 0
+  ) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      const numValue = Number(inputValue);
+      // Only update if it's a valid number and >= minimum
+      if (inputValue !== '' && !isNaN(numValue) && numValue >= minVal) {
+        setter(numValue);
+      }
+    }, 1000);
+  };
+
+  // Handle spinner input (arrow keys and spinner buttons) - update after debounce
+  const handleWidthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setWidthInput(newValue);
+
+    if (newValue !== '') {
+      // Debounce input - use current width as fallback
+      debounceUpdate(newValue, width, setWidth, widthDebounceRef, minDisplayValue);
+    }
+  };
+
+  const handleHeightInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setHeightInput(newValue);
+
+    if (newValue !== '') {
+      debounceUpdate(newValue, height, setHeight, heightDebounceRef, minDisplayValue);
+    }
+  };
+
+  const handleBorderWidthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setBorderWidthInput(newValue);
+
+    if (newValue !== '') {
+      debounceUpdate(newValue, borderWidth, setBorderWidth, borderWidthDebounceRef, 0);
+    }
+  };
+
+  const handleWidthBlur = () => {
+    if (widthDebounceRef.current) clearTimeout(widthDebounceRef.current);
+    const numValue = Number(widthInput);
+    // Use prev value if invalid or below minimum
+    const validatedValue = isNaN(numValue) || numValue < minDisplayValue ? widthPrev : numValue;
+    
+    setWidth(validatedValue);
+    setWidthInput(String(validatedValue));
+    setWidthPrev(validatedValue);
+  };
+
+  const handleHeightBlur = () => {
+    if (heightDebounceRef.current) clearTimeout(heightDebounceRef.current);
+    const numValue = Number(heightInput);
+    // Use prev value if invalid or below minimum
+    const validatedValue = isNaN(numValue) || numValue < minDisplayValue ? heightPrev : numValue;
+    
+    setHeight(validatedValue);
+    setHeightInput(String(validatedValue));
+    setHeightPrev(validatedValue);
+  };
+
+  const handleBorderWidthBlur = () => {
+    if (borderWidthDebounceRef.current) clearTimeout(borderWidthDebounceRef.current);
+    const numValue = Number(borderWidthInput);
+    const validatedValue = isNaN(numValue) || numValue < 0 ? borderWidthPrev : numValue;
+    
+    setBorderWidth(validatedValue);
+    setBorderWidthInput(String(validatedValue));
+    setBorderWidthPrev(validatedValue);
+  };
+
+  const handleWidthFocus = () => {
+    setWidthPrev(width);
+    clearTimeout(widthDebounceRef.current);
+  };
+
+  const handleHeightFocus = () => {
+    setHeightPrev(height);
+    clearTimeout(heightDebounceRef.current);
+  };
+
+  const handleBorderWidthFocus = () => {
+    setBorderWidthPrev(borderWidth);
+    clearTimeout(borderWidthDebounceRef.current);
+  };
+
+  // Cleanup debounce timers on unmount
+  useEffect(() => {
+    return () => {
+      clearTimeout(widthDebounceRef.current);
+      clearTimeout(heightDebounceRef.current);
+      clearTimeout(borderWidthDebounceRef.current);
+    };
+  }, []);
 
   const previewAspectRatio = useMemo(() => {
     return width / height;
@@ -58,8 +175,11 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
   const resetForm = () => {
     setName('');
     setWidth(20);
+    setWidthInput('20');
     setHeight(20);
+    setHeightInput('20');
     setBorderWidth(1);
+    setBorderWidthInput('1');
     setBorderColor('#000000');
     setImageUrl('');
   };
@@ -124,19 +244,45 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
             <Input
               label="Width"
               type="number"
-              value={width}
-              onChange={(e) => setWidth(Number(e.target.value))}
-              min={10}
-              step={10}
+              value={widthInput}
+              onChange={handleWidthInputChange}
+              onFocus={handleWidthFocus}
+              onBlur={handleWidthBlur}
+              unit={currentUnit}
+              min={minDisplayValue}
+              step={currentUnit === 'in' ? 0.25 : 1}
             />
             <Input
               label="Height"
               type="number"
-              value={height}
-              onChange={(e) => setHeight(Number(e.target.value))}
-              min={10}
-              step={10}
+              value={heightInput}
+              onChange={handleHeightInputChange}
+              onFocus={handleHeightFocus}
+              onBlur={handleHeightBlur}
+              unit={currentUnit}
+              min={minDisplayValue}
+              step={currentUnit === 'in' ? 0.25 : 1}
             />
+          </div>
+
+          {/* Swap dimensions button */}
+          <div className="flex justify-center">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<ArrowRightLeft size={16} />}
+              onClick={() => {
+                const temp = width;
+                const tempInput = widthInput;
+                setWidth(height);
+                setWidthInput(heightInput);
+                setHeight(temp);
+                setHeightInput(tempInput);
+              }}
+              title="Swap width and height"
+            >
+              Swap W/H
+            </Button>
           </div>
 
           {/* Border */}
@@ -144,8 +290,11 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
             <Input
               label="Border Width"
               type="number"
-              value={borderWidth}
-              onChange={(e) => setBorderWidth(Number(e.target.value))}
+              value={borderWidthInput}
+              onChange={handleBorderWidthInputChange}
+              onFocus={handleBorderWidthFocus}
+              onBlur={handleBorderWidthBlur}
+              unit={currentUnit}
               min={0}
               max={50}
               step={1}

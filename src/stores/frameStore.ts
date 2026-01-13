@@ -17,6 +17,7 @@ interface FrameStoreState {
   deleteInstance: (id: string) => void;
   moveInstance: (id: string, position: Position) => void;
   resizeInstance: (id: string, dimensions: Dimensions) => void;
+  rotateInstance: (id: string) => void;
 
   // Bulk operations
   clearAllInstances: () => void;
@@ -47,40 +48,11 @@ export const useFrameStore = create<FrameStoreState>((set) => ({
   },
 
   updateTemplate: (id, updates) =>
-    set((state) => {
-      // Update the template
-      const updatedTemplates = state.templates.map((t) =>
+    set((state) => ({
+      templates: state.templates.map((t) =>
         t.id === id ? { ...t, ...updates } : t
-      );
-
-      // Update all instances that reference this template
-      const updatedInstances = state.instances.map((instance) => {
-        if (instance.templateId !== id) return instance;
-
-        // Apply template updates to instance
-        const instanceUpdates: Partial<FrameInstance> = {};
-        
-        if (updates.dimensions) {
-          instanceUpdates.dimensions = updates.dimensions;
-        }
-        if (updates.borderColor !== undefined) {
-          instanceUpdates.borderColor = updates.borderColor;
-        }
-        if (updates.borderWidth !== undefined) {
-          instanceUpdates.borderWidth = updates.borderWidth;
-        }
-        if (updates.imageUrl !== undefined) {
-          instanceUpdates.imageUrl = updates.imageUrl;
-        }
-
-        return { ...instance, ...instanceUpdates };
-      });
-
-      return {
-        templates: updatedTemplates,
-        instances: updatedInstances,
-      };
-    }),
+      ),
+    })),
 
   deleteTemplate: (id) =>
     set((state) => ({
@@ -145,6 +117,13 @@ export const useFrameStore = create<FrameStoreState>((set) => ({
     set((state) => ({
       instances: state.instances.map((i) =>
         i.id === id ? { ...i, dimensions } : i
+      ),
+    })),
+
+  rotateInstance: (id) =>
+    set((state) => ({
+      instances: state.instances.map((i) =>
+        i.id === id ? { ...i, rotation: (i.rotation + 90) % 360 } : i
       ),
     })),
 

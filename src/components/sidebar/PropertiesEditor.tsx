@@ -1,4 +1,4 @@
-import { Copy, Trash2 } from 'lucide-react';
+import { Copy, RotateCw, Trash2, ArrowRightLeft } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { useUnitConversion } from '../../hooks/useUnitConversion';
 import { useFrameStore } from '../../stores/frameStore';
@@ -12,7 +12,7 @@ import { Toggle } from '../ui/Toggle';
 
 export const PropertiesEditor: React.FC = () => {
   const { selectedElement, selectedFrameId, clearSelection, gridConfig, setGridConfig } = useUIStore();
-  const { deleteInstance, updateInstance, instances, duplicateInstance } = useFrameStore();
+  const { deleteInstance, updateInstance, instances, duplicateInstance, rotateInstance } = useFrameStore();
   const { wall, setDimensions, setBackgroundColor } = wallStore();
   const { toDisplay, toBase, currentUnit, setUnit, getAvailableUnits } = useUnitConversion();
 
@@ -227,6 +227,26 @@ export const PropertiesEditor: React.FC = () => {
             step="0.1"
           />
 
+          {/* Swap dimensions button */}
+          <div className="flex justify-center">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<ArrowRightLeft size={16} />}
+              onClick={() => {
+                updateInstance(selectedFrame.id, {
+                  dimensions: {
+                    width: selectedFrame.dimensions.height,
+                    height: selectedFrame.dimensions.width,
+                  },
+                });
+              }}
+              title="Swap width and height"
+            >
+              Swap W/H
+            </Button>
+          </div>
+
           <ColorPicker
             label="Border Color"
             value={selectedFrame.borderColor}
@@ -247,6 +267,34 @@ export const PropertiesEditor: React.FC = () => {
             }}
             step="0.1"
           />
+
+          <div className="pt-2 border-t border-gray-200">
+            <label className="text-sm font-medium text-gray-700 block mb-2">Rotation: {selectedFrame.rotation}°</label>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                icon={<RotateCw size={16} />}
+                onClick={() => rotateInstance(selectedFrame.id)}
+              >
+                Rotate 90°
+              </Button>
+              <select
+                value={selectedFrame.rotation}
+                onChange={(e) => {
+                  updateInstance(selectedFrame.id, {
+                    rotation: parseInt(e.target.value),
+                  });
+                }}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={0}>0°</option>
+                <option value={90}>90°</option>
+                <option value={180}>180°</option>
+                <option value={270}>270°</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
     );

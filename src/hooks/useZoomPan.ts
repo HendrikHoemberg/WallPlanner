@@ -32,6 +32,7 @@ export function useZoomPan(options: UseZoomPanOptions = {}): UseZoomPanReturn {
   const { viewport, setZoom, setPan } = useUIStore();
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
+  const spaceKeyRef = useRef(false);
 
   const minZoom = options.minZoom ?? MIN_ZOOM;
   const maxZoom = options.maxZoom ?? MAX_ZOOM;
@@ -70,7 +71,7 @@ export function useZoomPan(options: UseZoomPanOptions = {}): UseZoomPanReturn {
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
       // Middle mouse button or space key + left click
-      if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+      if (e.button === 1 || (e.button === 0 && (e.shiftKey || spaceKeyRef.current))) {
         setIsPanning(true);
         panStartRef.current = {
           x: e.clientX - viewport.panOffset.x,
@@ -100,6 +101,20 @@ export function useZoomPan(options: UseZoomPanOptions = {}): UseZoomPanReturn {
     panStartRef.current = null;
   }, []);
 
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.code === 'Space' || e.key === ' ') {
+      spaceKeyRef.current = true;
+      e.preventDefault();
+    }
+  }, []);
+
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+    if (e.code === 'Space' || e.key === ' ') {
+      spaceKeyRef.current = false;
+      e.preventDefault();
+    }
+  }, []);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -108,14 +123,18 @@ export function useZoomPan(options: UseZoomPanOptions = {}): UseZoomPanReturn {
     container.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
       container.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [handleWheel, handleMouseDown, handleMouseMove, handleMouseUp]);
+  }, [handleWheel, handleMouseDown, handleMouseMove, handleMouseUp, handleKeyDown, handleKeyUp]);
 
   const zoomIn = useCallback(() => {
     const newZoom = Math.min(maxZoom, viewport.zoom + ZOOM_STEP);

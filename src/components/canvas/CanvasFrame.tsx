@@ -44,10 +44,12 @@ export const CanvasFrame: React.FC<CanvasFrameProps> = ({
   // dnd-kit's transform is in screen pixels, but we're inside a scaled container
   const dragStyle = transform
     ? {
-        transform: `translate3d(${transform.x / zoom}px, ${transform.y / zoom}px, 0)`,
+        transform: `translate3d(${transform.x / zoom}px, ${transform.y / zoom}px, 0) rotate(${frame.rotation}deg)`,
         transition: isDragging ? 'none' : undefined,
       }
-    : {};
+    : {
+        transform: `rotate(${frame.rotation}deg)`,
+      };
 
   return (
     <div
@@ -68,6 +70,7 @@ export const CanvasFrame: React.FC<CanvasFrameProps> = ({
         cursor: isDragging ? 'grabbing' : 'grab',
         boxShadow: isSelected ? '0 0 0 2px #3b82f6' : isDragging ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
         transition: isDragging ? 'none' : 'box-shadow 0.2s',
+        transformOrigin: 'center',
         ...dragStyle,
       }}
       className="group"
