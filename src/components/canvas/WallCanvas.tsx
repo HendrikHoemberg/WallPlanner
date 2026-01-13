@@ -7,7 +7,6 @@ import { useUIStore } from '../../stores/uiStore';
 import type { WallConfig } from '../../types';
 import { calculatePixelRatio, mmToPixels } from '../../utils/geometry';
 import { AlignmentGuides } from './AlignmentGuides';
-import { GridOverlay } from './GridOverlay';
 
 interface WallCanvasProps {
   wall: WallConfig;
@@ -17,7 +16,7 @@ interface WallCanvasProps {
 export const WallCanvas: React.FC<WallCanvasProps> = ({ wall, children }) => {
   const { containerRef, zoom, panOffset } = useZoomPan();
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { selectWall, gridConfig, setPixelRatio: setStorePixelRatio } = useUIStore();
+  const { selectWall, setPixelRatio: setStorePixelRatio } = useUIStore();
   const { guides } = useAlignmentGuides();
   const { setNodeRef, isOver } = useDroppable({
     id: 'wall-canvas',
@@ -80,14 +79,6 @@ export const WallCanvas: React.FC<WallCanvasProps> = ({ wall, children }) => {
           }}
           className="relative"
         >
-          {/* Grid overlay */}
-          <GridOverlay
-            wallDimensions={wall.dimensions}
-            gridConfig={gridConfig}
-            pixelRatio={pixelRatio}
-            zoom={zoom}
-          />
-
           {/* Alignment guides */}
           <AlignmentGuides
             guides={guides}

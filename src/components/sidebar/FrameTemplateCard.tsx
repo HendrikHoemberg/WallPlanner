@@ -36,19 +36,25 @@ export const FrameTemplateCard: React.FC<FrameTemplateCardProps> = ({
       } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
     >
       {/* Frame preview */}
-      <div
-        style={{
-          aspectRatio: `${template.dimensions.width} / ${template.dimensions.height}`,
-          borderColor: template.borderColor,
-          borderWidth: `${Math.max(2, Math.round(template.borderWidth / template.dimensions.width * 100))}px`,
-          borderStyle: 'solid',
-          boxSizing: 'border-box',
-        }}
-        className="w-full bg-gray-100 rounded mb-2 flex items-center justify-center overflow-hidden"
-      >
-        {template.imageUrl && (
-          <img src={template.imageUrl} alt={template.name} className="w-full h-full object-cover" />
-        )}
+      <div className="w-full h-32 bg-gray-50 rounded mb-2 flex items-center justify-center overflow-hidden p-2">
+        <div
+          style={{
+            aspectRatio: `${template.dimensions.width} / ${template.dimensions.height}`,
+            borderColor: template.borderColor,
+            // Calculate border width proportional to the preview size
+            borderWidth: `${Math.max(1, (template.borderWidth * ((128 - 16) / Math.max(template.dimensions.width, template.dimensions.height))))}px`,
+            borderStyle: 'solid',
+            height: template.dimensions.height >= template.dimensions.width ? '100%' : 'auto',
+            width: template.dimensions.width > template.dimensions.height ? '100%' : 'auto',
+            maxWidth: '100%',
+            maxHeight: '100%',
+          }}
+          className="bg-white shadow-sm flex-shrink-0 transition-all"
+        >
+          {template.imageUrl && (
+            <img src={template.imageUrl} alt={template.name} className="w-full h-full object-cover" />
+          )}
+        </div>
       </div>
 
       {/* Template info */}

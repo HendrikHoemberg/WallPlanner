@@ -1,11 +1,11 @@
 import {
-  DndContext,
-  DragOverlay,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
+    DndContext,
+    DragOverlay,
+    MouseSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
 } from '@dnd-kit/core';
 import { useEffect, useState } from 'react';
 import { CanvasFrame } from './components/canvas/CanvasFrame';
@@ -13,11 +13,10 @@ import { WallCanvas } from './components/canvas/WallCanvas';
 import { AppLayout } from './components/layout/AppLayout';
 import { FrameLibrary } from './components/sidebar/FrameLibrary';
 import { PropertiesEditor } from './components/sidebar/PropertiesEditor';
-import { DEFAULT_WALL_HEIGHT_MM, DEFAULT_WALL_WIDTH_MM, SNAP_THRESHOLD_MM } from './constants';
+import { DEFAULT_WALL_HEIGHT_MM, DEFAULT_WALL_WIDTH_MM } from './constants';
 import { useFrameStore } from './stores/frameStore';
 import { useUIStore } from './stores/uiStore';
 import { wallStore } from './stores/wallStore';
-import { snapToGrid } from './utils/geometry';
 import { clearProject, loadProject, saveProject } from './utils/storage';
 
 function App() {
@@ -50,7 +49,6 @@ function App() {
         instances: saved.frameInstances,
       });
       useUIStore.setState({
-        gridConfig: saved.gridConfig,
         viewport: saved.viewport,
       });
     }
@@ -118,14 +116,12 @@ function App() {
   // Auto-save on state changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      const gridConfig = useUIStore.getState().gridConfig;
       const viewport = useUIStore.getState().viewport;
       saveProject({
         version: '1.0.0',
         wall,
         frameTemplates: templates,
         frameInstances: instances,
-        gridConfig,
         viewport,
         lastSaved: Date.now(),
       });
@@ -137,7 +133,6 @@ function App() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over, delta } = event;
     const data = active.data.current as any;
-    const gridConfig = useUIStore.getState().gridConfig;
 
     if (data?.type === 'template' && over?.id === 'wall-canvas') {
       // For drop, we need to calculate the position on the wall
@@ -151,11 +146,6 @@ function App() {
           x: Math.max(0, wall.dimensions.width / 2 - template.dimensions.width / 2),
           y: Math.max(0, wall.dimensions.height / 2 - template.dimensions.height / 2),
         };
-
-        // Apply grid snapping if enabled
-        if (gridConfig.snapToGrid) {
-          position = snapToGrid(position, gridConfig.cellSize, SNAP_THRESHOLD_MM);
-        }
 
         addInstance(templateId, position);
       }
@@ -177,11 +167,6 @@ function App() {
           x: Math.max(0, Math.min(instance.position.x + deltaXmm, wall.dimensions.width - instance.dimensions.width)),
           y: Math.max(0, Math.min(instance.position.y + deltaYmm, wall.dimensions.height - instance.dimensions.height)),
         };
-
-        // Apply grid snapping if enabled
-        if (gridConfig.snapToGrid) {
-          newPosition = snapToGrid(newPosition, gridConfig.cellSize, SNAP_THRESHOLD_MM);
-        }
 
         useFrameStore.getState().moveInstance(instanceId, newPosition);
       }
@@ -229,7 +214,6 @@ function App() {
           },
           backgroundColor: '#f5f5f5',
           unitConfig: {
-            system: 'metric',
             displayUnit: 'cm',
           },
         },

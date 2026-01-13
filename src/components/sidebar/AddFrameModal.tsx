@@ -59,7 +59,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
       if (inputValue !== '' && !isNaN(numValue) && numValue >= minVal) {
         setter(numValue);
       }
-    }, 1000);
+    }, 500);
   };
 
   // Handle spinner input (arrow keys and spinner buttons) - update after debounce
@@ -147,9 +147,22 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
     };
   }, []);
 
-  const previewAspectRatio = useMemo(() => {
-    return width / height;
-  }, [width, height]);
+  const PREVIEW_CONTAINER_SIZE = 280; // Fixed size in pixels to scale into
+
+  const scaledPreview = useMemo(() => {
+    const w = toBase(width) || 1;
+    const h = toBase(height) || 1;
+    const bw = toBase(borderWidth) || 0;
+
+    // Scale factor to fit dimensions into PREVIEW_CONTAINER_SIZE
+    const scale = Math.min(PREVIEW_CONTAINER_SIZE / w, PREVIEW_CONTAINER_SIZE / h);
+    
+    return {
+      width: w * scale,
+      height: h * scale,
+      borderWidth: Math.max(1, bw * scale),
+    };
+  }, [width, height, borderWidth, toBase]);
 
   const handleSave = () => {
     if (!width || !height) {
@@ -192,8 +205,14 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 transition-all"
+      onClick={handleClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-lg font-semibold">
@@ -210,20 +229,22 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
         {/* Content */}
         <div className="p-4 space-y-4">
           {/* Preview */}
-          <div className="bg-gray-100 rounded-lg p-4">
+          <div className="bg-gray-100 rounded-lg p-4 flex items-center justify-center h-[320px]">
             <div
               style={{
-                aspectRatio: previewAspectRatio,
+                width: `${scaledPreview.width}px`,
+                height: `${scaledPreview.height}px`,
                 borderColor,
-                borderWidth: `${Math.max(1, borderWidth / 10)}px`,
+                borderWidth: `${scaledPreview.borderWidth}px`,
+                borderStyle: 'solid',
               }}
-              className="bg-white rounded"
+              className="bg-white rounded shadow-sm overflow-hidden flex-shrink-0 transition-all duration-200"
             >
               {imageUrl && (
                 <img
                   src={imageUrl}
                   alt="Preview"
-                  className="w-full h-full object-cover rounded"
+                  className="w-full h-full object-cover"
                 />
               )}
             </div>
@@ -250,7 +271,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
               onBlur={handleWidthBlur}
               unit={currentUnit}
               min={minDisplayValue}
-              step={currentUnit === 'in' ? 0.25 : 1}
+              step="0.1"
             />
             <Input
               label="Height"
@@ -261,7 +282,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
               onBlur={handleHeightBlur}
               unit={currentUnit}
               min={minDisplayValue}
-              step={currentUnit === 'in' ? 0.25 : 1}
+              step="0.1"
             />
           </div>
 

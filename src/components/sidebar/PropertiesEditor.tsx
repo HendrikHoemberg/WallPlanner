@@ -1,4 +1,4 @@
-import { Copy, RotateCw, Trash2, ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft, Copy, RotateCw, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { useUnitConversion } from '../../hooks/useUnitConversion';
 import { useFrameStore } from '../../stores/frameStore';
@@ -8,10 +8,9 @@ import { Button } from '../ui/Button';
 import { ColorPicker } from '../ui/ColorPicker';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { Toggle } from '../ui/Toggle';
 
 export const PropertiesEditor: React.FC = () => {
-  const { selectedElement, selectedFrameId, clearSelection, gridConfig, setGridConfig } = useUIStore();
+  const { selectedElement, selectedFrameId, clearSelection } = useUIStore();
   const { deleteInstance, updateInstance, instances, duplicateInstance, rotateInstance } = useFrameStore();
   const { wall, setDimensions, setBackgroundColor } = wallStore();
   const { toDisplay, toBase, currentUnit, setUnit, getAvailableUnits } = useUnitConversion();
@@ -73,70 +72,6 @@ export const PropertiesEditor: React.FC = () => {
             value={wall.backgroundColor}
             onChange={setBackgroundColor}
           />
-        </div>
-
-        {/* Grid Configuration Section */}
-        <div className="pt-4 border-t border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Grid Settings</h3>
-
-          <div className="space-y-3">
-            <Toggle
-              label="Enable Grid"
-              checked={gridConfig.enabled}
-              onChange={(e) => setGridConfig({ enabled: (e.target as HTMLInputElement).checked })}
-            />
-
-            <Toggle
-              label="Show Grid"
-              checked={gridConfig.showGrid}
-              onChange={(e) => setGridConfig({ showGrid: (e.target as HTMLInputElement).checked })}
-            />
-
-            <Toggle
-              label="Snap to Grid"
-              checked={gridConfig.snapToGrid}
-              onChange={(e) => setGridConfig({ snapToGrid: (e.target as HTMLInputElement).checked })}
-            />
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">Grid Size: {gridConfig.cellSize}mm</label>
-              <input
-                type="range"
-                value={gridConfig.cellSize}
-                min={10}
-                max={500}
-                step={10}
-                onChange={(e) => setGridConfig({ cellSize: parseInt(e.target.value) })}
-                className="w-full"
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
-                  onClick={() => setGridConfig({ cellSize: 50 })}
-                >
-                  Small (50mm)
-                </button>
-                <button
-                  className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
-                  onClick={() => setGridConfig({ cellSize: 100 })}
-                >
-                  Medium (100mm)
-                </button>
-                <button
-                  className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
-                  onClick={() => setGridConfig({ cellSize: 200 })}
-                >
-                  Large (200mm)
-                </button>
-              </div>
-            </div>
-
-            <ColorPicker
-              label="Grid Color"
-              value={gridConfig.gridColor}
-              onChange={(color) => setGridConfig({ gridColor: color })}
-            />
-          </div>
         </div>
       </div>
     );

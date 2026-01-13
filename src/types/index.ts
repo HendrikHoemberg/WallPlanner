@@ -1,12 +1,7 @@
-// Unit System Types
-export type UnitSystem = 'metric' | 'imperial';
-
-export type MetricUnit = 'mm' | 'cm' | 'm';
-export type ImperialUnit = 'in' | 'ft';
-export type Unit = MetricUnit | ImperialUnit;
+// Unit Types
+export type Unit = 'mm' | 'cm' | 'm';
 
 export interface UnitConfig {
-  system: UnitSystem;
   displayUnit: Unit;
 }
 
@@ -62,20 +57,7 @@ export interface ViewportState {
   maxZoom: number;
 }
 
-// Grid Configuration
-export interface GridConfig {
-  enabled: boolean;
-  cellSize: number; // mm - grid cell size
-  snapToGrid: boolean;
-  showGrid: boolean;
-  gridColor: string;
-}
-
-// Interaction Mode
-export type InteractionMode = 'free' | 'grid';
-
 export interface UIState {
-  mode: InteractionMode;
   selectedFrameId: string | null;
   selectedElement: 'wall' | 'frame' | null;
   isDragging: boolean;
@@ -98,7 +80,6 @@ export interface ProjectData {
   wall: WallConfig;
   frameTemplates: FrameTemplate[];
   frameInstances: FrameInstance[];
-  gridConfig: GridConfig;
   viewport: ViewportState;
   lastSaved: number; // timestamp
 }

@@ -1,6 +1,5 @@
 import { FileX, Maximize, ZoomIn, ZoomOut } from 'lucide-react';
 import React from 'react';
-import { useUnitConversion } from '../../hooks/useUnitConversion';
 import { useUIStore } from '../../stores/uiStore';
 import { Button } from '../ui/Button';
 
@@ -9,8 +8,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onNewProject }) => {
-  const { viewport, setZoom, toggleGrid, mode, setMode } = useUIStore();
-  const { currentSystem, toggleSystem } = useUnitConversion();
+  const { viewport, setZoom } = useUIStore();
 
   const handleZoomIn = () => {
     setZoom(viewport.zoom + 0.1);
@@ -82,31 +80,6 @@ export const Header: React.FC<HeaderProps> = ({ onNewProject }) => {
             icon={<Maximize size={16} />}
             title="Fit to View"
           />
-        </div>
-
-        {/* Right controls - Mode and Units */}
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant={mode === 'grid' ? 'primary' : 'secondary'}
-            onClick={() => setMode(mode === 'grid' ? 'free' : 'grid')}
-          >
-            {mode === 'grid' ? 'Grid' : 'Free'} Mode
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={toggleSystem}
-          >
-            {currentSystem === 'metric' ? 'Metric' : 'Imperial'}
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={toggleGrid}
-          >
-            Toggle Grid
-          </Button>
         </div>
       </div>
     </header>

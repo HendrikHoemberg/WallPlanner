@@ -18,7 +18,6 @@ export function useProjectPersistence() {
       wall: wallState.wall,
       frameTemplates: frameState.templates,
       frameInstances: frameState.instances,
-      gridConfig: uiState.gridConfig,
       viewport: uiState.viewport,
       lastSaved: Date.now(),
     };

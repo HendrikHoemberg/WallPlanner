@@ -1,12 +1,10 @@
-import type { Unit, UnitSystem } from '../types';
+import type { Unit } from '../types';
 
 // Conversion factors TO millimeters
 const TO_MM: Record<Unit, number> = {
   mm: 1,
   cm: 10,
   m: 1000,
-  in: 25.4,
-  ft: 304.8,
 };
 
 // Convert any unit to base unit (mm)
@@ -29,20 +27,9 @@ export function formatWithUnit(
   return `${converted.toFixed(decimals)}${unit}`;
 }
 
-// Get available units for a unit system
-export function getUnitsForSystem(system: UnitSystem): Unit[] {
-  if (system === 'metric') {
-    return ['mm', 'cm', 'm'];
-  }
-  return ['in', 'ft'];
-}
-
-// Get appropriate default unit for a system
-export function getDefaultUnitForSystem(system: UnitSystem): Unit {
-  if (system === 'metric') {
-    return 'cm';
-  }
-  return 'in';
+// Get available units
+export function getAvailableUnits(): Unit[] {
+  return ['mm', 'cm', 'm'];
 }
 
 // Parse user input string to mm
@@ -71,14 +58,4 @@ export function parseUserInput(input: string, currentUnit: Unit): number | null 
 
   // Use current unit if no unit specified
   return toMillimeters(value, currentUnit);
-}
-
-// Check if a unit is metric
-export function isMetricUnit(unit: Unit): boolean {
-  return ['mm', 'cm', 'm'].includes(unit);
-}
-
-// Get the system for a unit
-export function getSystemForUnit(unit: Unit): UnitSystem {
-  return isMetricUnit(unit) ? 'metric' : 'imperial';
 }

@@ -1,27 +1,23 @@
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { wallStore } from '../stores/wallStore';
-import type { UnitSystem } from '../types';
 import {
     formatWithUnit,
     fromMillimeters,
-    getDefaultUnitForSystem,
-    getUnitsForSystem,
+    getAvailableUnits,
     parseUserInput as parseInput,
     toMillimeters,
 } from '../utils/unitConversion';
 
 export function useUnitConversion() {
-  const { wall, setDisplayUnit, setUnitSystem } = wallStore(
+  const { wall, setDisplayUnit } = wallStore(
     useShallow((state) => ({
       wall: state.wall,
       setDisplayUnit: state.setDisplayUnit,
-      setUnitSystem: state.setUnitSystem,
     }))
   );
 
   const currentUnit = wall.unitConfig.displayUnit;
-  const currentSystem = wall.unitConfig.system;
 
   const toDisplay = useCallback(
     (valueMm: number) => {
@@ -51,16 +47,9 @@ export function useUnitConversion() {
     [currentUnit]
   );
 
-  const getAvailableUnits = useCallback(() => {
-    return getUnitsForSystem(currentSystem);
-  }, [currentSystem]);
-
-  const toggleSystem = useCallback(() => {
-    const newSystem: UnitSystem = currentSystem === 'metric' ? 'imperial' : 'metric';
-    const defaultUnit = getDefaultUnitForSystem(newSystem);
-    setUnitSystem(newSystem);
-    setDisplayUnit(defaultUnit);
-  }, [currentSystem, setUnitSystem, setDisplayUnit]);
+  const getUnits = useCallback(() => {
+    return getAvailableUnits();
+  }, []);
 
   return {
     toDisplay,
@@ -68,9 +57,7 @@ export function useUnitConversion() {
     format,
     parseUserInput,
     currentUnit,
-    currentSystem,
     setUnit: setDisplayUnit,
-    toggleSystem,
-    getAvailableUnits,
+    getAvailableUnits: getUnits,
   };
 }

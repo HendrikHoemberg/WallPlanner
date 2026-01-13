@@ -50,27 +50,6 @@ export function pixelsToMm(pixels: number, pixelRatio: number, zoom: number): nu
   return pixels / (pixelRatio * zoom);
 }
 
-// Snap position to grid
-export function snapToGrid(
-  position: Position,
-  gridSize: number,
-  threshold: number
-): Position {
-  const snappedX = Math.round(position.x / gridSize) * gridSize;
-  const snappedY = Math.round(position.y / gridSize) * gridSize;
-
-  // Only snap if within threshold
-  const snapX = Math.abs(position.x - snappedX) < threshold ? snappedX : position.x;
-  const snapY = Math.abs(position.y - snappedY) < threshold ? snappedY : position.y;
-
-  return { x: snapX, y: snapY };
-}
-
-// Snap dimension to grid
-export function snapDimensionToGrid(value: number, gridSize: number): number {
-  return Math.round(value / gridSize) * gridSize;
-}
-
 // Get frame edges
 interface FrameEdges {
   left: number;
