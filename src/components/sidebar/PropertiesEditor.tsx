@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { ColorPicker } from '../ui/ColorPicker';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
+import { ImageUploadInput } from './ImageUploadInput';
 
 interface PropertyInputProps {
   label: string;
@@ -257,6 +258,16 @@ export const PropertiesEditor: React.FC = () => {
               updateInstance(selectedFrame.id, {
                 borderWidth: mm,
               });
+            }}
+          />
+
+          <ImageUploadInput
+            imageUrl={selectedFrame.imageUrl}
+            onImageChange={(dataUrl) => {
+              updateInstance(selectedFrame.id, { imageUrl: dataUrl });
+            }}
+            onImageRemove={() => {
+              updateInstance(selectedFrame.id, { imageUrl: undefined });
             }}
           />
         </div>
