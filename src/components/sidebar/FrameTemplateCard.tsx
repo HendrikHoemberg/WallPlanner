@@ -31,6 +31,7 @@ export const FrameTemplateCard: React.FC<FrameTemplateCardProps> = ({
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onDoubleClick={onEdit}
       className={`p-3 border rounded-lg bg-white transition-all ${
         isDragging ? 'opacity-50 scale-95' : 'hover:shadow-md'
       } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
@@ -66,7 +67,7 @@ export const FrameTemplateCard: React.FC<FrameTemplateCardProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex gap-2" onDoubleClick={(e) => e.stopPropagation()}>
         <Button
           variant="secondary"
           size="sm"

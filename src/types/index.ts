@@ -17,6 +17,8 @@ export interface Dimensions {
   height: number; // mm
 }
 
+export interface Rect extends Position, Dimensions {}
+
 // Wall Configuration
 export interface WallConfig {
   id: string;
@@ -65,13 +67,14 @@ export interface UIState {
 }
 
 // Alignment Guide
-export type GuideType = 'vertical' | 'horizontal';
+export type GuideType = 'vertical' | 'horizontal' | 'spacing-x' | 'spacing-y';
 export type AlignmentType = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
 
 export interface AlignmentGuide {
   type: GuideType;
-  position: number; // mm from edge
-  alignmentType: AlignmentType;
+  position?: number; // mm from edge (Line guides)
+  alignmentType?: AlignmentType; // (Line guides)
+  regions?: { start: number; size: number }[]; // (Spacing guides) intervals to highlight
 }
 
 // Project/Persistence

@@ -1,7 +1,6 @@
 import { useDroppable } from '@dnd-kit/core';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CanvasContext } from '../../contexts/CanvasContext';
-import { useAlignmentGuides } from '../../hooks/useAlignmentGuides';
 import { useZoomPan } from '../../hooks/useZoomPan';
 import { useUIStore } from '../../stores/uiStore';
 import type { WallConfig } from '../../types';
@@ -16,8 +15,7 @@ interface WallCanvasProps {
 export const WallCanvas: React.FC<WallCanvasProps> = ({ wall, children }) => {
   const { containerRef, zoom, panOffset } = useZoomPan();
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { selectWall, setPixelRatio: setStorePixelRatio } = useUIStore();
-  const { guides } = useAlignmentGuides();
+  const { selectWall, setPixelRatio: setStorePixelRatio, setPan, alignmentGuides } = useUIStore();
   const { setNodeRef, isOver } = useDroppable({
     id: 'wall-canvas',
   });
@@ -30,7 +28,20 @@ export const WallCanvas: React.FC<WallCanvasProps> = ({ wall, children }) => {
     const newRatio = calculatePixelRatio(wall.dimensions, { width, height });
     setPixelRatio(newRatio);
     setStorePixelRatio(newRatio);
-  }, [wall.dimensions, containerRef, setStorePixelRatio]);
+
+    // Center the wall in the viewport
+    // We assume zoom is 1 because calculatePixelRatio is designed to fit the wall at 1x
+    // If the wall dimensions change, we want to re-center securely.
+    const wallWidthPx = wall.dimensions.width * newRatio;
+    const wallHeightPx = wall.dimensions.height * newRatio;
+    
+    // Calculate centered position
+    const panX = (width - wallWidthPx) / 2;
+    const panY = (height - wallHeightPx) / 2;
+    
+    setPan({ x: panX, y: panY });
+
+  }, [wall.dimensions, containerRef, setStorePixelRatio, setPan]);
 
   // Convert wall dimensions to pixels (zoom applied by CSS transform, use 1 here)
   const wallWidthPx = mmToPixels(wall.dimensions.width, pixelRatio, 1);
@@ -81,7 +92,7 @@ export const WallCanvas: React.FC<WallCanvasProps> = ({ wall, children }) => {
         >
           {/* Alignment guides */}
           <AlignmentGuides
-            guides={guides}
+            guides={alignmentGuides}
             wallDimensions={wall.dimensions}
             pixelRatio={pixelRatio}
             zoom={zoom}

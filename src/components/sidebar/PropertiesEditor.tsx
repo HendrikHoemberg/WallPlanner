@@ -1,5 +1,5 @@
-import { ArrowRightLeft, Copy, RotateCw, Trash2 } from 'lucide-react';
-import React, { useMemo } from 'react';
+import { ArrowRightLeft, Copy, Trash2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { useUnitConversion } from '../../hooks/useUnitConversion';
 import { useFrameStore } from '../../stores/frameStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -9,9 +9,70 @@ import { ColorPicker } from '../ui/ColorPicker';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 
+interface PropertyInputProps {
+  label: string;
+  value: number;
+  unit?: string;
+  onChange: (mm: number) => void;
+  toDisplay: (mm: number) => number;
+  toBase: (display: number) => number;
+  step?: string;
+  min?: number;
+}
+
+const PropertyInput: React.FC<PropertyInputProps> = ({
+  label,
+  value,
+  unit,
+  onChange,
+  toDisplay,
+  toBase,
+  step = "0.1",
+  min,
+}) => {
+  const displayValue = toDisplay(value);
+  const [localValue, setLocalValue] = useState(Number(displayValue.toFixed(2)).toString());
+  const [isFocused, setIsFocused] = useState(false);
+  const [prevDisplayValue, setPrevDisplayValue] = useState(displayValue);
+
+  if (displayValue !== prevDisplayValue) {
+    setPrevDisplayValue(displayValue);
+    if (!isFocused) {
+      setLocalValue(Number(displayValue.toFixed(2)).toString());
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    setLocalValue(newVal);
+
+    const numericVal = parseFloat(newVal);
+    if (!isNaN(numericVal)) {
+      onChange(toBase(numericVal));
+    }
+  };
+
+  return (
+    <Input
+      label={label}
+      type="number"
+      value={localValue}
+      unit={unit}
+      onChange={handleChange}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => {
+        setIsFocused(false);
+        setLocalValue(Number(displayValue.toFixed(2)).toString());
+      }}
+      step={step}
+      min={min}
+    />
+  );
+};
+
 export const PropertiesEditor: React.FC = () => {
   const { selectedElement, selectedFrameId, clearSelection } = useUIStore();
-  const { deleteInstance, updateInstance, instances, duplicateInstance, rotateInstance } = useFrameStore();
+  const { deleteInstance, updateInstance, instances, duplicateInstance } = useFrameStore();
   const { wall, setDimensions, setBackgroundColor } = wallStore();
   const { toDisplay, toBase, currentUnit, setUnit, getAvailableUnits } = useUnitConversion();
 
@@ -30,13 +91,13 @@ export const PropertiesEditor: React.FC = () => {
         <h2 className="text-lg font-semibold text-gray-900">Wall Properties</h2>
 
         <div className="space-y-3">
-          <Input
+          <PropertyInput
             label="Width"
-            type="number"
-            value={toDisplay(wall.dimensions.width).toFixed(2)}
+            value={wall.dimensions.width}
+            toDisplay={toDisplay}
+            toBase={toBase}
             unit={currentUnit}
-            onChange={(e) => {
-              const mm = toBase(parseFloat(e.target.value) || 0);
+            onChange={(mm) => {
               setDimensions({
                 width: mm,
                 height: wall.dimensions.height,
@@ -45,13 +106,13 @@ export const PropertiesEditor: React.FC = () => {
             step="0.1"
           />
 
-          <Input
+          <PropertyInput
             label="Height"
-            type="number"
-            value={toDisplay(wall.dimensions.height).toFixed(2)}
+            value={wall.dimensions.height}
+            toDisplay={toDisplay}
+            toBase={toBase}
             unit={currentUnit}
-            onChange={(e) => {
-              const mm = toBase(parseFloat(e.target.value) || 0);
+            onChange={(mm) => {
               setDimensions({
                 width: wall.dimensions.width,
                 height: mm,
@@ -106,60 +167,56 @@ export const PropertiesEditor: React.FC = () => {
         </div>
 
         <div className="space-y-3">
-          <Input
+          <PropertyInput
             label="Position X"
-            type="number"
-            value={toDisplay(selectedFrame.position.x).toFixed(2)}
+            value={selectedFrame.position.x}
+            toDisplay={toDisplay}
+            toBase={toBase}
             unit={currentUnit}
-            onChange={(e) => {
-              const mm = toBase(parseFloat(e.target.value) || 0);
+            onChange={(mm) => {
               updateInstance(selectedFrame.id, {
                 position: { ...selectedFrame.position, x: mm },
               });
             }}
-            step="0.1"
           />
 
-          <Input
+          <PropertyInput
             label="Position Y"
-            type="number"
-            value={toDisplay(selectedFrame.position.y).toFixed(2)}
+            value={selectedFrame.position.y}
+            toDisplay={toDisplay}
+            toBase={toBase}
             unit={currentUnit}
-            onChange={(e) => {
-              const mm = toBase(parseFloat(e.target.value) || 0);
+            onChange={(mm) => {
               updateInstance(selectedFrame.id, {
                 position: { ...selectedFrame.position, y: mm },
               });
             }}
-            step="0.1"
           />
 
-          <Input
+          <PropertyInput
             label="Width"
-            type="number"
-            value={toDisplay(selectedFrame.dimensions.width).toFixed(2)}
+            value={selectedFrame.dimensions.width}
+            toDisplay={toDisplay}
+            toBase={toBase}
             unit={currentUnit}
-            onChange={(e) => {
-              const mm = toBase(parseFloat(e.target.value) || 0);
+            onChange={(mm) => {
               updateInstance(selectedFrame.id, {
                 dimensions: { ...selectedFrame.dimensions, width: mm },
               });
             }}
-            step="0.1"
           />
 
-          <Input
+          <PropertyInput
             label="Height"
-            type="number"
-            value={toDisplay(selectedFrame.dimensions.height).toFixed(2)}
+            value={selectedFrame.dimensions.height}
+            toDisplay={toDisplay}
+            toBase={toBase}
             unit={currentUnit}
-            onChange={(e) => {
-              const mm = toBase(parseFloat(e.target.value) || 0);
+            onChange={(mm) => {
               updateInstance(selectedFrame.id, {
                 dimensions: { ...selectedFrame.dimensions, height: mm },
               });
             }}
-            step="0.1"
           />
 
           {/* Swap dimensions button */}
@@ -190,46 +247,18 @@ export const PropertiesEditor: React.FC = () => {
             }}
           />
 
-          <Input
+          <PropertyInput
             label="Border Width"
-            type="number"
-            value={selectedFrame.borderWidth.toFixed(2)}
+            value={selectedFrame.borderWidth}
+            toDisplay={(v) => v}
+            toBase={(v) => v}
             unit="mm"
-            onChange={(e) => {
+            onChange={(mm) => {
               updateInstance(selectedFrame.id, {
-                borderWidth: parseFloat(e.target.value) || 0,
+                borderWidth: mm,
               });
             }}
-            step="0.1"
           />
-
-          <div className="pt-2 border-t border-gray-200">
-            <label className="text-sm font-medium text-gray-700 block mb-2">Rotation: {selectedFrame.rotation}°</label>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                icon={<RotateCw size={16} />}
-                onClick={() => rotateInstance(selectedFrame.id)}
-              >
-                Rotate 90°
-              </Button>
-              <select
-                value={selectedFrame.rotation}
-                onChange={(e) => {
-                  updateInstance(selectedFrame.id, {
-                    rotation: parseInt(e.target.value),
-                  });
-                }}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={0}>0°</option>
-                <option value={90}>90°</option>
-                <option value={180}>180°</option>
-                <option value={270}>270°</option>
-              </select>
-            </div>
-          </div>
         </div>
       </div>
     );

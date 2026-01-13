@@ -47,7 +47,6 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
   // Debounce function to update preview after user stops typing
   const debounceUpdate = (
     inputValue: string,
-    currentValue: number,
     setter: (value: number) => void,
     timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | undefined>,
     minVal: number = 0
@@ -69,7 +68,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
 
     if (newValue !== '') {
       // Debounce input - use current width as fallback
-      debounceUpdate(newValue, width, setWidth, widthDebounceRef, minDisplayValue);
+      debounceUpdate(newValue, setWidth, widthDebounceRef, minDisplayValue);
     }
   };
 
@@ -78,7 +77,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
     setHeightInput(newValue);
 
     if (newValue !== '') {
-      debounceUpdate(newValue, height, setHeight, heightDebounceRef, minDisplayValue);
+      debounceUpdate(newValue, setHeight, heightDebounceRef, minDisplayValue);
     }
   };
 
@@ -87,7 +86,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
     setBorderWidthInput(newValue);
 
     if (newValue !== '') {
-      debounceUpdate(newValue, borderWidth, setBorderWidth, borderWidthDebounceRef, 0);
+      debounceUpdate(newValue, setBorderWidth, borderWidthDebounceRef, 0);
     }
   };
 
@@ -141,8 +140,11 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
   // Cleanup debounce timers on unmount
   useEffect(() => {
     return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       clearTimeout(widthDebounceRef.current);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       clearTimeout(heightDebounceRef.current);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       clearTimeout(borderWidthDebounceRef.current);
     };
   }, []);
@@ -229,7 +231,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
         {/* Content */}
         <div className="p-4 space-y-4">
           {/* Preview */}
-          <div className="bg-gray-100 rounded-lg p-4 flex items-center justify-center h-[320px]">
+          <div className="bg-gray-100 rounded-lg p-4 flex items-center justify-center h-80">
             <div
               style={{
                 width: `${scaledPreview.width}px`,
@@ -238,7 +240,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
                 borderWidth: `${scaledPreview.borderWidth}px`,
                 borderStyle: 'solid',
               }}
-              className="bg-white rounded shadow-sm overflow-hidden flex-shrink-0 transition-all duration-200"
+              className="bg-white rounded shadow-sm overflow-hidden shrink-0 transition-all duration-200"
             >
               {imageUrl && (
                 <img

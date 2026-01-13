@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { MAX_ZOOM, MIN_ZOOM } from '../constants';
-import type { Position, UIState, ViewportState } from '../types';
+import type { AlignmentGuide, Position, UIState, ViewportState } from '../types';
 
 interface UIStoreState extends UIState {
   viewport: ViewportState;
   pixelRatio: number;
+  alignmentGuides: AlignmentGuide[];
   selectFrame: (id: string | null) => void;
   selectWall: () => void;
   clearSelection: () => void;
@@ -14,6 +15,7 @@ interface UIStoreState extends UIState {
   setIsDragging: (isDragging: boolean) => void;
   setShowSmartGuides: (show: boolean) => void;
   setPixelRatio: (ratio: number) => void;
+  setAlignmentGuides: (guides: AlignmentGuide[]) => void;
 }
 
 const defaultViewport: ViewportState = {
@@ -27,9 +29,10 @@ export const useUIStore = create<UIStoreState>((set) => ({
   selectedFrameId: null,
   selectedElement: null,
   isDragging: false,
-  showSmartGuides: false,
+  showSmartGuides: true,
   viewport: defaultViewport,
   pixelRatio: 0.5,
+  alignmentGuides: [],
 
   selectFrame: (id: string | null) =>
     set({
@@ -74,5 +77,7 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   setShowSmartGuides: (show: boolean) => set({ showSmartGuides: show }),
 
+
+  setAlignmentGuides: (guides: AlignmentGuide[]) => set({ alignmentGuides: guides }),
   setPixelRatio: (ratio: number) => set({ pixelRatio: ratio }),
 }));

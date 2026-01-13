@@ -6,8 +6,9 @@ import {
     useSensor,
     useSensors,
     type DragEndEvent,
+    type Modifier,
 } from '@dnd-kit/core';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CanvasFrame } from './components/canvas/CanvasFrame';
 import { WallCanvas } from './components/canvas/WallCanvas';
 import { AppLayout } from './components/layout/AppLayout';
@@ -17,6 +18,7 @@ import { DEFAULT_WALL_HEIGHT_MM, DEFAULT_WALL_WIDTH_MM } from './constants';
 import { useFrameStore } from './stores/frameStore';
 import { useUIStore } from './stores/uiStore';
 import { wallStore } from './stores/wallStore';
+import { calculateSnap } from './utils/snapping';
 import { clearProject, loadProject, saveProject } from './utils/storage';
 
 function App() {
@@ -31,8 +33,17 @@ function App() {
   const selectFrame = useUIStore((state) => state.selectFrame);
   const setZoom = useUIStore((state) => state.setZoom);
   const resetViewport = useUIStore((state) => state.resetViewport);
+  // Add alignment guides state
+  const alignmentGuides = useUIStore((state) => state.alignmentGuides);
+  const setAlignmentGuides = useUIStore((state) => state.setAlignmentGuides);
+  const showSmartGuides = useUIStore((state) => state.showSmartGuides);
+  const pixelRatio = useUIStore((state) => state.pixelRatio);
+  const zoom = useUIStore((state) => state.viewport.zoom);
 
   const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
+  
+  // Ref to store the last snap result for commit
+  const lastSnapResultRef = useRef<{ x: number, y: number } | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -133,6 +144,9 @@ function App() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over, delta } = event;
     const data = active.data.current as any;
+    
+    // Clear guides
+    setAlignmentGuides([]);
 
     if (data?.type === 'template' && over?.id === 'wall-canvas') {
       // For drop, we need to calculate the position on the wall
@@ -152,23 +166,26 @@ function App() {
     } else if (data?.type === 'instance' && over?.id === 'wall-canvas') {
       // Frame was moved on canvas
       const instanceId = data.instanceId;
-      const instance = instances.find((i) => i.id === instanceId);
-
-      if (instance) {
-        // Calculate new position from delta
-        // Delta is in screen pixels, we need to convert to wall coordinates (mm)
-        // The wall canvas is scaled by zoom, so we divide by (pixelRatio * zoom)
-        const pixelRatio = useUIStore.getState().pixelRatio;
-        const zoom = useUIStore.getState().viewport.zoom;
-        const deltaXmm = delta.x / (pixelRatio * zoom);
-        const deltaYmm = delta.y / (pixelRatio * zoom);
-
-        let newPosition = {
-          x: Math.max(0, Math.min(instance.position.x + deltaXmm, wall.dimensions.width - instance.dimensions.width)),
-          y: Math.max(0, Math.min(instance.position.y + deltaYmm, wall.dimensions.height - instance.dimensions.height)),
-        };
-
-        useFrameStore.getState().moveInstance(instanceId, newPosition);
+      
+      // Use snapped result if available (calculated in modifier)
+      if (lastSnapResultRef.current) {
+        useFrameStore.getState().moveInstance(instanceId, lastSnapResultRef.current);
+        lastSnapResultRef.current = null;
+      } else {
+        // Fallback to delta calculation if modifier didn't run (e.g. smart guides disabled)
+        const instance = instances.find((i) => i.id === instanceId);
+  
+        if (instance) {
+          const deltaXmm = delta.x / (pixelRatio * zoom);
+          const deltaYmm = delta.y / (pixelRatio * zoom);
+  
+          let newPosition = {
+            x: Math.max(0, Math.min(instance.position.x + deltaXmm, wall.dimensions.width - instance.dimensions.width)),
+            y: Math.max(0, Math.min(instance.position.y + deltaYmm, wall.dimensions.height - instance.dimensions.height)),
+          };
+  
+          useFrameStore.getState().moveInstance(instanceId, newPosition);
+        }
       }
     }
 
@@ -180,23 +197,70 @@ function App() {
     if (data?.type === 'template') {
       setDraggedTemplateId(data.templateId);
     }
+    // Reset snap result
+    lastSnapResultRef.current = null;
   };
 
-  const handleDragMove = (event: any) => {
-    const data = event.active.data.current as any;
-
-    if (data?.type === 'instance') {
-      // Calculate guides for this dragging frame
-      const instanceId = data.instanceId;
-      const instance = instances.find((i) => i.id === instanceId);
-      const showSmartGuides = useUIStore.getState().showSmartGuides;
-
-      if (instance && showSmartGuides) {
-        // The guides will be shown in AlignmentGuides component
-        // This is handled via the hook state
+  // Modifier for snapping
+  const snapToGridModifier: Modifier = useCallback(
+    ({ transform, active }) => {
+      // Clean up guides if not dragging specific instance
+      if (active?.data?.current?.type !== 'instance') {
+        return transform;
       }
-    }
-  };
+
+      if (!showSmartGuides) return transform;
+
+      const instanceId = active.data.current.instanceId;
+      const instance = instances.find((i) => i.id === instanceId);
+
+      if (!instance) return transform;
+
+      // Calculate proposed position in mm
+      const deltaXmm = transform.x / (pixelRatio * zoom);
+      const deltaYmm = transform.y / (pixelRatio * zoom);
+
+      const proposedX = instance.position.x + deltaXmm;
+      const proposedY = instance.position.y + deltaYmm;
+
+      const result = calculateSnap(
+        instance,
+        { x: proposedX, y: proposedY },
+        instances,
+        wall.dimensions
+      );
+      
+      // Store result for drag end
+      lastSnapResultRef.current = { x: result.x, y: result.y };
+
+      // Update guides if different
+      // Debounce or check equality to avoid excess re-renders
+      const guidesChanged = 
+        result.guides.length !== alignmentGuides.length ||
+        !result.guides.every((g, i) => 
+          g.type === alignmentGuides[i].type && 
+          Math.abs(g.position - alignmentGuides[i].position) < 0.001
+        );
+
+      if (guidesChanged) {
+        requestAnimationFrame(() => setAlignmentGuides(result.guides));
+      } else if (result.guides.length === 0 && alignmentGuides.length > 0) {
+         requestAnimationFrame(() => setAlignmentGuides([]));
+      }
+
+      // Convert back to transform pixels
+      const snappedDeltaXmm = result.x - instance.position.x;
+      const snappedDeltaYmm = result.y - instance.position.y;
+      
+      return {
+        ...transform,
+        x: snappedDeltaXmm * pixelRatio * zoom,
+        y: snappedDeltaYmm * pixelRatio * zoom,
+      };
+
+    },
+    [instances, wall.dimensions, alignmentGuides, setAlignmentGuides, showSmartGuides, pixelRatio, zoom]
+  );
 
   const draggedTemplate = draggedTemplateId
     ? templates.find((t) => t.id === draggedTemplateId)
@@ -248,8 +312,8 @@ function App() {
   return (
     <DndContext
       sensors={sensors}
+      modifiers={[snapToGridModifier]}
       onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
     >
       <AppLayout
